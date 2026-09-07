@@ -1,0 +1,11 @@
+{
+  "modelo": "tabela_escurecimento_e_borda",
+  "corte": 0.042464,
+  "amostras_treino": 3400,
+  "amostras_validacao": 600,
+  "pixels_positivos_treino": 44444610,
+  "pixels_negativos_treino": 1348195390,
+  "iou_validacao": 0.0484,
+  "precisao_validacao": 0.057,
+  "recall_validacao": 0.2428
+}

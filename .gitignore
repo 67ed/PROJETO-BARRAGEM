@@ -6,15 +6,5 @@ __pycache__/
 .jupyter_tmp/
 .ipython_tmp/
 .DS_Store
-dados/amostra/
-resultados/imagens/
-resultados/mascaras/
-resultados/registros/*.txt
-resultados/registros/*.json
-resultados/modelos/
-resultados/comparacoes/
-!resultados/imagens/.gitkeep
-!resultados/mascaras/.gitkeep
-!resultados/registros/.gitkeep
-!resultados/comparacoes/.gitkeep
 !dados/.gitkeep
+.vscode
