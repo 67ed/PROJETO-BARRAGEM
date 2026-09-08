@@ -1,10 +1,47 @@
+# Python
 .venv/
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Jupyter / IPython
 .ipynb_checkpoints/
 .jupyter_tmp/
 .ipython_tmp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Dados grandes — o dataset ZIP não vai pro GitHub
+*.zip
+dados/amostra/
+
+# Resultados gerados (manter .gitkeep)
+resultados/deteccoes/*.png
+resultados/mascaras/*.png
+resultados/comparacoes/*.png
+resultados/registros/*.json
+resultados/registros/*.jsonl
+resultados/logs/
+resultados/modelos/*.npz
+resultados/modelos/*.json
+
+# Manter as pastas vazias no git
+!resultados/deteccoes/.gitkeep
+!resultados/mascaras/.gitkeep
+!resultados/comparacoes/.gitkeep
+!resultados/registros/.gitkeep
+!resultados/modelos/.gitkeep
 !dados/.gitkeep
-.vscode
+
+# Arquivo antigo (renomeado para avaliar_dataset.py)
+run_semana2.py

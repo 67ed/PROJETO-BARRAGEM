@@ -175,7 +175,7 @@ def main() -> None:
         caminho_modelo=str(args.modelo),
     )
     pasta_log = config.PASTA_RESULTADOS / "registros"
-    pasta_img = config.PASTA_RESULTADOS / "imagens"
+    pasta_img = config.PASTA_RESULTADOS / "deteccoes"
     pasta_log.mkdir(parents=True, exist_ok=True)
     pasta_img.mkdir(parents=True, exist_ok=True)
     log_path = pasta_log / "ao_vivo.jsonl"
