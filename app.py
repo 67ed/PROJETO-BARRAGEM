@@ -31,7 +31,7 @@ import numpy as np
 
 from codigo import config
 from codigo.camera import FonteFrames, abrir_pasta_imagens, abrir_video, abrir_webcam
-from codigo.data import extrair_subconjunto
+from codigo.data import extrair_subconjunto, listar_pares_extraidos
 from codigo.logging_config import configurar_logging
 from codigo.sistema import SistemaMonitoramento
 
@@ -40,7 +40,12 @@ logger = logging.getLogger(__name__)
 
 def _fonte(args: argparse.Namespace) -> tuple[FonteFrames, str]:
     if args.demo:
-        pares = extrair_subconjunto(n=args.n, caminho_zip=args.zip)
+        if args.zip.is_file():
+            pares = extrair_subconjunto(n=args.n, caminho_zip=args.zip)
+        else:
+            pares = listar_pares_extraidos()
+            if not pares:
+                pares = extrair_subconjunto(n=args.n, caminho_zip=args.zip)
         pasta = pares[0].caminho_imagem.parent
         fonte = abrir_pasta_imagens(pasta)
         return fonte, "CAM-DEMO"
@@ -154,16 +159,19 @@ def main() -> None:
     parser.add_argument("--atraso", type=int, default=30, help="ms entre frames (demo/vídeo)")
     args = parser.parse_args()
 
-    if args.demo and not args.zip.is_file():
-        logger.error(f"Para --demo precisa do zip: {args.zip}")
-        raise SystemExit(f"Para --demo precisa do zip: {args.zip}")
+    pares_existentes = listar_pares_extraidos()
+    tem_amostra = len(pares_existentes) > 0
+
+    if args.demo and not args.zip.is_file() and not tem_amostra:
+        logger.error(f"Para --demo precisa do zip: {args.zip} ou de imagens em {config.PASTA_AMOSTRA / 'imagens'}")
+        raise SystemExit(f"Para --demo precisa do zip: {args.zip} ou de imagens em {config.PASTA_AMOSTRA / 'imagens'}")
 
     try:
         fonte, camera_id = _fonte(args)
     except RuntimeError as exc:
         logger.warning(str(exc))
         logger.info("Caindo para --demo com o conjunto de dados...")
-        if not args.zip.is_file():
+        if not args.zip.is_file() and not tem_amostra:
             logger.error("Sem câmera e sem zip do DamCrack. Não dá para testar.")
             raise SystemExit("Sem câmera e sem zip do DamCrack. Não dá para testar.")
         args.demo = True
