@@ -21,9 +21,16 @@ class FonteFrames:
         indice (int): O índice atual para a leitura da imagem sequencial.
         nome (str): O nome representativo da fonte.
     """
-    def __init__(self, captura: cv2.VideoCapture | None, imagens: list[Path] | None, nome: str):
+    def __init__(
+        self,
+        captura: cv2.VideoCapture | None,
+        imagens: list[Path] | None,
+        nome: str,
+        frames: list[np.ndarray] | None = None,
+    ):
         self.captura = captura
         self.imagens = imagens or []
+        self.frames = frames or []
         self.indice = 0
         self.nome = nome
 
@@ -37,7 +44,7 @@ class FonteFrames:
         """
         if self.captura is not None:
             return self.captura.isOpened()
-        return len(self.imagens) > 0
+        return len(self.imagens) > 0 or len(self.frames) > 0
 
     def ler(self) -> np.ndarray | None:
         """
@@ -51,12 +58,22 @@ class FonteFrames:
             if not ok:
                 return None
             return frame
+        if self.frames:
+            frame = self.frames[self.indice % len(self.frames)]
+            self.indice += 1
+            return frame.copy()
         if not self.imagens:
             return None
         caminho = self.imagens[self.indice % len(self.imagens)]
         self.indice += 1
         frame = cv2.imread(str(caminho), cv2.IMREAD_COLOR)
         return frame
+
+    def pular(self) -> None:
+        """Avança para o próximo frame da sequência (demo/imagens)."""
+        total = len(self.frames) or len(self.imagens)
+        if total:
+            self.indice += 1
 
     def soltar(self) -> None:
         """Libera os recursos associados à fonte."""
@@ -134,3 +151,12 @@ def abrir_pasta_imagens(pasta: Path) -> FonteFrames:
         logger.error(f"Nenhuma imagem em {pasta}")
         raise RuntimeError(f"Nenhuma imagem em {pasta}")
     return FonteFrames(None, arquivos, pasta.name)
+
+
+def abrir_sintetico(n: int = 12) -> FonteFrames:
+    """Demo sem câmera e sem DamCrack: concreto sintético com traços."""
+    from codigo.sintetico import gerar_lote
+
+    frames = gerar_lote(n=n)
+    logger.info("Fonte sintética: %s frames de concreto gerados na hora.", len(frames))
+    return FonteFrames(None, None, "CAM-SYN", frames=frames)

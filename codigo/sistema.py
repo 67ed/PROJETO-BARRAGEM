@@ -9,8 +9,6 @@ from codigo import bot
 from codigo.detector import detectar, ResultadoDetector
 from codigo.pipeline import montar_resultado
 from codigo.temporal import RastreadorPersistencia
-from codigo.ui import desenhar_painel
-
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +51,7 @@ class SistemaMonitoramento:
             frame_bgr (np.ndarray): O quadro obtido da câmera ou do vídeo em BGR.
             
         Returns:
-            tuple[np.ndarray, ResultadoDetector, dict]: Uma tupla contendo o painel renderizado, a detecção completa e o dicionário de resultados.
+            tuple[np.ndarray, ResultadoDetector, dict]: Overlay com as regiões, detecção e dicionário de resultados.
         """
         det = detectar(
             frame_bgr,
@@ -67,5 +65,4 @@ class SistemaMonitoramento:
             frames_persistentes=persistencia,
         )
         dados["explicacao"] = bot.explicar(dados)
-        tela = desenhar_painel(det.overlay, dados)
-        return tela, det, dados
+        return det.overlay, det, dados

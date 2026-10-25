@@ -164,26 +164,39 @@ def iou_mascaras(predita: np.ndarray, referencia: np.ndarray) -> float:
 
 
 def sobrepor(
-    imagem_bgr: np.ndarray, 
-    mascara: np.ndarray, 
-    cor: tuple[int, int, int] = (0, 0, 255)
+    imagem_bgr: np.ndarray,
+    mascara: np.ndarray,
+    cor: tuple[int, int, int] = (0, 70, 255),
+    regioes: list[Regiao] | None = None,
+    max_caixas: int = 5,
 ) -> np.ndarray:
-    """Cria uma visualização sobrepondo a máscara à imagem original.
-    
-    Args:
-        imagem_bgr: Imagem original colorida.
-        mascara: Máscara binária a ser sobreposta.
-        cor: Cor em BGR para a sobreposição.
-        
-    Returns:
-        Imagem com o overlay aplicado.
-    """
+    """Cria uma visualização sobrepondo a máscara à imagem original."""
     vis = imagem_bgr.copy()
     if vis.shape[:2] != mascara.shape[:2]:
         mascara = cv2.resize(mascara, (vis.shape[1], vis.shape[0]), interpolation=cv2.INTER_NEAREST)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    halo = cv2.dilate((mascara > 0).astype(np.uint8) * 255, kernel, iterations=1)
     camada = vis.copy()
+    camada[halo > 0] = tuple(max(0, c - 40) for c in cor)
     camada[mascara > 0] = cor
-    misturada = cv2.addWeighted(vis, 0.65, camada, 0.35, 0)
+    misturada = cv2.addWeighted(vis, 0.62, camada, 0.38, 0)
     contornos, _ = cv2.findContours(mascara, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(misturada, contornos, -1, cor, 1)
+    cv2.drawContours(misturada, contornos, -1, cor, 2, cv2.LINE_AA)
+
+    alvos = regioes if regioes is not None else []
+    for i, regiao in enumerate(alvos[:max_caixas]):
+        p1 = (regiao.x, regiao.y)
+        p2 = (regiao.x + regiao.largura, regiao.y + regiao.altura)
+        cv2.rectangle(misturada, p1, p2, cor, 1, cv2.LINE_AA)
+        etiqueta = f"R{i + 1}"
+        cv2.putText(
+            misturada,
+            etiqueta,
+            (regiao.x, max(16, regiao.y - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            cor,
+            1,
+            cv2.LINE_AA,
+        )
     return misturada

@@ -187,7 +187,7 @@ def detectar(
         mascara = _segmentar(metodo, suave, bgr, caminho_modelo)
 
     regioes = regioes_da_mascara(mascara)
-    overlay = sobrepor(bgr, mascara)
+    overlay = sobrepor(bgr, mascara, regioes=regioes)
     iou = None
     
     if mascara_referencia is not None:

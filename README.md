@@ -1,204 +1,98 @@
-# 🏗️ Projeto Barragem — Detecção de Rachaduras
+# Projeto Barragem — detector de rachaduras
 
 Protótipo de visão computacional para **apoiar o monitoramento** de barragens de concreto.  
-O sistema **não** diagnostica estrutura e **não** estima risco de ruptura.
+Não diagnostica estrutura e **não** estima risco de ruptura.
 
-> *A câmera observa, o sistema analisa, o alerta informa e o bot explica.*
+A câmera observa, o sistema analisa, o alerta informa e o bot explica.
 
----
-
-## ⚡ Início Rápido
+## Início rápido
 
 ```bash
-git clone https://github.com/SEU_USUARIO/projeto_barragem.git
 cd projeto_barragem
 python -m venv .venv
-source .venv/bin/activate        # Linux/Mac
-# .venv\Scripts\activate         # Windows
+source .venv/bin/activate      # se usar bash / zsh
+# source .venv/bin/activate.fish # se usar fish shell
 pip install -r requirements.txt
-```
-
-### Rodar com imagens de teste (sem câmera)
-
-```bash
 python app.py --demo
 ```
 
-### Rodar com webcam
+`--demo` usa o DamCrack se o ZIP estiver disponível. Sem o dataset, gera **concreto sintético** na hora — dá para apresentar o sistema sem câmera e sem download.
 
 ```bash
-python app.py
+python app.py                  # webcam (cai para demo se falhar)
+python app.py --video clipe.mp4
+python app.py --imagem foto.jpg
+python app.py --metodo votacao
 ```
 
-### Rodar com vídeo
+ZIP do DamCrack (opcional):
 
 ```bash
-python app.py --video caminho/para/video.mp4
+export DAMCRACK_ZIP=/caminho/para/Damage\ Segmentaion.zip
 ```
 
-> **Nota:** O modo `--demo` precisa do arquivo `Damage Segmentaion.zip` do dataset DamCrack.
-> Configure o caminho via variável de ambiente: `export DAMCRACK_ZIP=/caminho/para/arquivo.zip`
+## Como funciona
 
----
+Cinco métodos clássicos votam na **mesma região**. O aviso urgente só sai com pelo menos 3 concordâncias.
 
-## 🧠 Como Funciona
+| Método | Papel |
+|--------|--------|
+| Canny | Bordas |
+| Top-Hat | Traços claros |
+| Sobel | Gradiente |
+| Frangi | Estruturas alongadas |
+| Modelo treinado | Escurecimento + borda |
 
-O sistema usa **5 métodos clássicos** de segmentação (sem rede neural):
+Antes da votação: filtro bilateral, CLAHE, remoção de pontos isolados e descarte de método com cobertura > 25%.
 
-| Método | Tipo |
-|--------|------|
-| **Canny** | Detecção de bordas |
-| **Top-Hat** | Realce de traços claros |
-| **Sobel** | Gradiente de intensidade |
-| **Frangi** | Filtro para estruturas tubulares |
-| **Modelo Treinado** | Tabela de escurecimento + borda |
+## Controles
 
-### Sistema de Votação
-
-O alerta urgente só aparece quando **pelo menos 3 dos 5 métodos** concordam na **mesma região** da imagem.
-
-Antes da votação, cada imagem passa por:
-- ✅ Redução de ruído bilateral
-- ✅ Compensação de iluminação (CLAHE)
-- ✅ Remoção de pontos isolados
-- ✅ Descarte de métodos com cobertura > 25% (evita falsos positivos por textura)
-
----
-
-## 🔧 Scripts Disponíveis
-
-| Script | Descrição |
-|--------|-----------|
-| `app.py` | Aplicação principal com interface gráfica |
-| `avaliar_dataset.py` | Avaliação em lote no DamCrack com cálculo de IoU |
-| `comparar_metodos.py` | Grade visual comparando todos os métodos |
-| `treinar_modelo_simples.py` | Treina o modelo tabular leve |
-
-### Avaliar no Dataset
-
-```bash
-# Avaliar 50 imagens (padrão) com votação
-python avaliar_dataset.py
-
-# Avaliar com método específico
-python avaliar_dataset.py --n 20 --metodo canny
-```
-
-### Treinar o Modelo Leve
-
-```bash
-# Treino com 300 imagens (padrão, leve)
-python treinar_modelo_simples.py
-
-# Usar todas as 4.000 imagens
-python treinar_modelo_simples.py --amostras 0
-```
-
-O modelo é salvo em `resultados/modelos/limiar_damcrack.npz`.
-
-### Comparar Métodos Visualmente
-
-```bash
-python comparar_metodos.py --imagem caminho/para/foto.jpg --mostrar
-```
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-projeto_barragem/
-├── app.py                      # Interface gráfica (webcam/vídeo/demo)
-├── avaliar_dataset.py          # Avaliação em lote no DamCrack
-├── comparar_metodos.py         # Comparação visual dos métodos
-├── treinar_modelo_simples.py   # Treino do modelo tabular
-├── requirements.txt
-│
-├── codigo/                     # Pacote principal
-│   ├── __init__.py
-│   ├── config.py               # Parâmetros e constantes
-│   ├── logging_config.py       # Configuração centralizada de log
-│   ├── preprocessing.py        # Pré-processamento de imagem
-│   ├── segmentation.py         # Algoritmos de segmentação
-│   ├── detector.py             # Orquestrador de detecção + votação
-│   ├── analysis.py             # Análise geométrica das regiões
-│   ├── alerts.py               # Classificação de nível de alerta
-│   ├── bot.py                  # Geração de texto explicativo
-│   ├── pipeline.py             # Pipeline imagem → resultado
-│   ├── sistema.py              # Fachada do sistema completo
-│   ├── camera.py               # Abstração de fontes de vídeo
-│   ├── data.py                 # Leitura do DamCrack (ZIP)
-│   ├── temporal.py             # Persistência entre frames
-│   ├── modelo_simples.py       # Classificador tabular leve
-│   ├── treino_simples.py       # Lógica de treino do modelo
-│   └── ui.py                   # HUD / overlay na tela
-│
-├── dados/                      # Amostras extraídas (gerado em runtime)
-├── resultados/
-│   ├── imagens/                # Overlays gerados
-│   ├── mascaras/               # Máscaras preditas
-│   ├── comparacoes/            # Grades comparativas
-│   ├── modelos/                # Modelo treinado (.npz)
-│   └── registros/              # Logs JSON de cada execução
-└── notebooks/                  # Notebooks Jupyter (opcional)
-```
-
----
-
-## 🎯 Controles da Interface
-
-| Controle | Ação |
-|----------|------|
+| Tecla / clique | Ação |
+|----------------|------|
 | `q` ou `Esc` | Sair |
-| `s` | Salvar frame atual |
-| `Espaço` | Pausar/retomar captura |
-| Clique em **PARAR CAPTURA** | Pausar/retomar |
-| Clique em **SAIR** | Fechar aplicação |
+| `espaço` | Pausar / retomar |
+| `s` | Salvar frame com HUD |
+| `m` | Trocar método |
+| `h` | Mostrar / ocultar atalhos |
+| `n` | Próxima imagem (demo) |
+| **PAUSAR** / **SAIR** | Clique na barra inferior |
 
----
-
-## 📊 Níveis de Alerta
+## Níveis de alerta (internos do software)
 
 | Nível | Significado |
 |-------|-------------|
-| `nenhum` | Sem anomalia detectada |
-| `baixa atenção` | Possível anomalia, poucos métodos detectaram |
-| `necessita inspeção` | Anomalia confirmada por múltiplos métodos |
-| `monitoramento prioritário` | ≥3 métodos concordam + região extensa |
+| nenhum | Sem anomalia suficiente |
+| baixa atenção | Pouca evidência |
+| necessita inspeção | Concordância ou região persistente |
+| monitoramento prioritário | ≥3 métodos + região extensa |
 
-> ⚠️ Esses níveis são **internos do software** e não representam classificação oficial de segurança.
+Esses níveis **não** são classificação oficial de segurança.
 
----
-
-## 📋 Dataset DamCrack
-
-O projeto usa o dataset **DamCrack** (Damage Segmentation) com ~4.000 pares imagem/máscara.
-
-| Cor da Máscara | Classe | Tratamento |
-|----------------|--------|------------|
-| Vermelho `(255,0,0)` | `0` | Possível rachadura |
-| Azul `(0,0,255)` | `1` | Outro dano (spalling) |
-
-> O nome do ZIP é `Damage Segmentaion.zip` (com typo original do dataset).
-
----
-
-## 🛠️ Requisitos
-
-- Python 3.10+
-- OpenCV >= 4.8
-- NumPy >= 1.24
-- scikit-image >= 0.22
-- Matplotlib >= 3.7
-
-Instale tudo com:
+## Scripts
 
 ```bash
-pip install -r requirements.txt
+python avaliar_dataset.py --n 50
+python comparar_metodos.py --imagem foto.jpg --mostrar
+python treinar_modelo_simples.py
+pytest
 ```
 
----
+## Estrutura
 
-## 📄 Licença
+```
+app.py                 interface ao vivo
+avaliar_dataset.py     IoU em lote no DamCrack
+comparar_metodos.py    grade visual dos detectores
+codigo/                pipeline, votação, HUD, bot
+tests/                 testes de alerta, HUD e sintético
+resultados/            overlays, máscaras, logs JSON
+```
+
+## Dataset DamCrack
+
+~4.000 pares imagem/máscara. Vermelho = possível rachadura; azul = outro dano.  
+O ZIP original se chama `Damage Segmentaion.zip` (typo do dataset).
+
+## Licença
 
 Projeto acadêmico. Consulte os autores para uso comercial.
